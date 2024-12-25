@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>"プロキシではありません"</title>
+<script>
+function openUrls() {
+  fetch('https://zhjpwlj.github.io/list.txt') 
+    .then(response => response.text())
+    .then(data => {
+      const urls = data.split('\n'); 
+
+      urls.forEach(url => {
+        if (url.trim() !== '') {
+          window.open(url, '_blank'); 
+        }
+      });
+    });
+}
+</script>
+</head>
+<body>
+  <h1>Open URLs in New Tabs</h1>
+  <button onclick="openUrls()">プロキシを開く</button>
+</body>
+</html>
