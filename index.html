@@ -3,7 +3,35 @@
 <head>
 <title>プロキシリスト</title>
 <script>
-// ... (既存の関数)
+// CookieからブロックされたURLのリストを取得する関数
+function getBlockedUrls() {
+  const cookies = document.cookie.split(';');
+  const blockedUrlCookie = cookies.find(cookie => cookie.startsWith('blockedUrls='));
+  return blockedUrlCookie ? blockedUrlCookie.split('=')[1].split(',') : [];
+}
+
+// ブロックされたURLのリストをCookieに保存する関数
+function setBlockedUrls(urls) {
+  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1年後に有効期限切れ
+  document.cookie = `blockedUrls=${urls.join(',')}; expires=${expires.toUTCString()}; path=/`;
+}
+
+// URLがブロックリストに含まれているか確認する関数
+function isBlockedUrl(url, blockedUrls) {
+  return blockedUrls.includes(url);
+}
+
+// タイトルが "ブロックされました。" になるまで最大15秒待つ関数
+async function waitForBlockedTitle() {
+  return new Promise(resolve => {
+    const intervalId = setInterval(() => {
+      if (document.title === "ブロックされました。") {
+        clearInterval(intervalId);
+        resolve(true); // タイトルが変わったことを示す
+      }
+    }, 100); // 100ミリ秒ごとにタイトルをチェック
+  });
+}
 
 async function openUrls() {
   const blockedUrls = getBlockedUrls();
@@ -15,7 +43,7 @@ async function openUrls() {
 
       urls.forEach(async (url, index) => {
         if (url.trim() !== '') {
-          window.open(url, '_blank'); 
+          window.open(url, '_blank');
 
           // タイトルが "ブロックされました。" になるまで最大15秒待つ
           let isBlocked = false;
