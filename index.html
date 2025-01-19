@@ -3,17 +3,33 @@
 <head>
 <title>プロキシリスト</title>
 <script>
-function openUrls() {
-  fetch('https://zhjpwlj.github.io/Proxylist/list.txt') 
+// ... (既存の関数)
+
+async function openUrls() {
+  const blockedUrls = getBlockedUrls();
+
+  fetch('https://zhjpwlj.github.io/Proxylist/list.txt')
     .then(response => response.text())
     .then(data => {
-      const urls = data.split('\n'); 
+      const urls = data.split('\n');
 
-      urls.forEach(url => {
+      // 非同期でURLを開く
+      urls.forEach(async (url, index) => {
         if (url.trim() !== '') {
-          window.open(url, '_blank'); 
+          if (document.title === "ブロックされました。" || isBlockedUrl(url, blockedUrls)) {
+            console.warn(`Skipping blocked URL: ${url}`);
+            blockedUrls.push(url);
+            setBlockedUrls(blockedUrls);
+          } else {
+            // スロットリング (100ミリ秒ごとに1つのタブを開く)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            window.open(url, '_blank');
+          }
         }
       });
+    })
+    .catch(error => {
+      console.error('Error fetching data:', error);
     });
 }
 </script>
