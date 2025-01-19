@@ -3,27 +3,7 @@
 <head>
 <title>プロキシリスト</title>
 <script>
-// CookieからブロックされたURLのリストを取得する関数
-function getBlockedUrls() {
-  const cookies = document.cookie.split(';');
-  const blockedUrlCookie = cookies.find(cookie => cookie.startsWith('blockedUrls='));
-  if (blockedUrlCookie) {
-    return blockedUrlCookie.split('=')[1].split(',');
-  } else {
-    return []; 
-  }
-}
-
-// ブロックされたURLのリストをCookieに保存する関数
-function setBlockedUrls(urls) {
-  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1年後に有効期限切れ
-  document.cookie = `blockedUrls=${urls.join(',')}; expires=${expires.toUTCString()}; path=/`;
-}
-
-// URLがブロックリストに含まれているか確認する関数
-function isBlockedUrl(url, blockedUrls) {
-  return blockedUrls.includes(url);
-}
+// ... (既存の関数)
 
 async function openUrls() {
   const blockedUrls = getBlockedUrls();
@@ -35,14 +15,29 @@ async function openUrls() {
 
       urls.forEach(async (url, index) => {
         if (url.trim() !== '') {
-          if (document.title === "ブロックされました。" || isBlockedUrl(url, blockedUrls)) {
+          window.open(url, '_blank'); 
+
+          // タイトルが "ブロックされました。" になるまで最大15秒待つ
+          let isBlocked = false;
+          await Promise.race([
+            new Promise(resolve => {
+              const intervalId = setInterval(() => {
+                if (document.title === "ブロックされました。") {
+                  clearInterval(intervalId);
+                  isBlocked = true;
+                  resolve();
+                }
+              }, 100);
+            }),
+            new Promise(resolve => setTimeout(resolve, 15000)) // 15秒後にタイムアウト
+          ]);
+
+          if (!isBlocked) {
+            console.log(`Title did not change to "ブロックされました。" for ${url}`);
+          } else {
             console.warn(`Skipping blocked URL: ${url}`);
             blockedUrls.push(url);
             setBlockedUrls(blockedUrls);
-          } else {
-            // スロットリング (100ミリ秒ごとに1つのタブを開く)
-            await new Promise(resolve => setTimeout(resolve, 100));
-            window.open(url, '_blank');
           }
         }
       });
